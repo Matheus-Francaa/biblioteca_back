@@ -1,0 +1,15 @@
+const express = require('express');
+const router = express.Router();
+const bookController = require('../controllers/bookController');
+const { authMiddleware, isBibliotecario } = require('../middlewares/auth');
+
+// Rotas públicas (ou apenas autenticadas)
+router.get('/', authMiddleware, bookController.getAll);
+router.get('/:id', authMiddleware, bookController.getById);
+
+// Rotas apenas para bibliotecários
+router.post('/', authMiddleware, isBibliotecario, bookController.create);
+router.put('/:id', authMiddleware, isBibliotecario, bookController.update);
+router.delete('/:id', authMiddleware, isBibliotecario, bookController.delete);
+
+module.exports = router;
