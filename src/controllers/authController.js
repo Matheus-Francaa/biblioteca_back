@@ -2,7 +2,6 @@ const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 
 const authController = {
-    // Registro de novo usuário
     register: async (req, res) => {
         try {
             console.log('📝 Tentando registrar usuário...');
@@ -10,11 +9,15 @@ const authController = {
 
             const { nome, email, senha, tipo, telefone, endereco } = req.body;
 
-            // Validações
+          const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      
+
+      
             if (!nome || !email || !senha) {
                 console.log('❌ Validação falhou: campos obrigatórios faltando');
+
                 return res.status(400).json({
-                    error: 'Nome, email e senha são obrigatórios.'
+                    error: 'Nome, email e senha são obrigatórios.\n'
                 });
             }
 
@@ -34,7 +37,7 @@ const authController = {
                 nome,
                 email,
                 senha,
-                tipo: tipo || 'leitor',
+                tipo: tipo ?? 'leitor',
                 telefone,
                 endereco
             });
@@ -50,18 +53,19 @@ const authController = {
                 user: userResponse
             });
         } catch (error) {
+            console.error('Erro ao registrar usuário:', error);
+         
             console.error('💥 ERRO DETALHADO ao registrar usuário:');
             console.error('Message:', error.message);
             console.error('Stack:', error.stack);
             console.error('Full error:', error);
-            res.status(500).json({
+            res.status(401).json({
                 error: 'Erro ao cadastrar usuário.',
                 details: error.message
             });
         }
     },
 
-    // Login
     login: async (req, res) => {
         try {
             const { email, senha } = req.body;
@@ -72,7 +76,6 @@ const authController = {
                 });
             }
 
-            // Busca o usuário
             const user = await User.findOne({ where: { email } });
             if (!user) {
                 return res.status(401).json({
@@ -80,14 +83,12 @@ const authController = {
                 });
             }
 
-            // Verifica se o usuário está ativo
             if (!user.ativo) {
                 return res.status(401).json({
                     error: 'Usuário inativo. Entre em contato com o administrador.'
                 });
             }
 
-            // Valida a senha
             const senhaValida = await user.validarSenha(senha);
             if (!senhaValida) {
                 return res.status(401).json({
@@ -95,7 +96,6 @@ const authController = {
                 });
             }
 
-            // Gera o token JWT
             const token = jwt.sign(
                 {
                     id: user.id,
@@ -106,7 +106,6 @@ const authController = {
                 { expiresIn: process.env.JWT_EXPIRES_IN }
             );
 
-            // Remove a senha do retorno
             const userResponse = user.toJSON();
             delete userResponse.senha;
 
@@ -117,13 +116,12 @@ const authController = {
             });
         } catch (error) {
             console.error('Erro ao fazer login:', error);
-            res.status(500).json({
+            res.status(401).json({
                 error: 'Erro ao fazer login.'
             });
         }
     },
 
-    // Buscar perfil do usuário logado
     getProfile: async (req, res) => {
         try {
             const user = await User.findByPk(req.user.id, {
@@ -139,7 +137,7 @@ const authController = {
             res.json(user);
         } catch (error) {
             console.error('Erro ao buscar perfil:', error);
-            res.status(500).json({
+            res.status(401).json({
                 error: 'Erro ao buscar perfil.'
             });
         }
