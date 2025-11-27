@@ -4,21 +4,35 @@ const { User } = require('../models');
 const authController = {
     register: async (req, res) => {
         try {
+            console.log('📝 Tentando registrar usuário...');
+            console.log('Dados recebidos:', req.body);
+
             const { nome, email, senha, tipo, telefone, endereco } = req.body;
+
           const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-            if (!nome || !emailIsValid || !senha ) {
+      
+
+      
+            if (!nome || !email || !senha) {
+                console.log('❌ Validação falhou: campos obrigatórios faltando');
+
                 return res.status(400).json({
                     error: 'Nome, email e senha são obrigatórios.\n'
                 });
             }
 
+            // Verifica se o email já existe
+            console.log('🔍 Verificando se email já existe...');
             const userExists = await User.findOne({ where: { email } });
             if (userExists) {
+                console.log('❌ Email já cadastrado');
                 return res.status(400).json({
                     error: 'Email já cadastrado.'
                 });
             }
 
+            // Cria o usuário
+            console.log('➕ Criando usuário...');
             const user = await User.create({
                 nome,
                 email,
@@ -28,6 +42,9 @@ const authController = {
                 endereco
             });
 
+            console.log('✅ Usuário criado com sucesso:', user.id);
+
+            // Remove a senha do retorno
             const userResponse = user.toJSON();
             delete userResponse.senha;
 
@@ -37,8 +54,14 @@ const authController = {
             });
         } catch (error) {
             console.error('Erro ao registrar usuário:', error);
+         
+            console.error('💥 ERRO DETALHADO ao registrar usuário:');
+            console.error('Message:', error.message);
+            console.error('Stack:', error.stack);
+            console.error('Full error:', error);
             res.status(401).json({
-                error: 'Erro ao cadastrar usuário.'
+                error: 'Erro ao cadastrar usuário.',
+                details: error.message
             });
         }
     },
